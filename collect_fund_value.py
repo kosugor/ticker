@@ -6,8 +6,8 @@ from zoneinfo import ZoneInfo
 
 from ticker.calendar import previous_business_day
 from ticker.config import Settings
-from ticker.database import connect, fund_value_exists, insert_fund_value
-from ticker.funds import load_adapter
+from ticker.database import connect, insert_fund_value
+from ticker.funds import FundAdapterError, load_adapters
 from ticker.http import build_session
 from ticker.logging_config import configure_logging
 
@@ -15,31 +15,98 @@ from ticker.logging_config import configure_logging
 LOGGER = logging.getLogger("collect_fund_value")
 
 
+def _count_existing_funds(connection, fund_ids, target_date):
+    if not fund_ids:
+        return 0
+    placeholders = ", ".join("?" for _ in fund_ids)
+    query = (
+        "SELECT COUNT(DISTINCT fund_id) FROM fund_values "
+        f"WHERE value_date = ? AND fund_id IN ({placeholders})"
+    )
+    row = connection.execute(query, (target_date.isoformat(), *fund_ids)).fetchone()
+    return int(row[0] if row is not None else 0)
+
+
+def _configured_adapters(settings: Settings, adapter):
+    if adapter is None:
+        return load_adapters(settings.fund_adapter)
+    if hasattr(adapter, "fetch"):
+        return (adapter,)
+    return tuple(adapter)
+
+
+def _run_adapter(settings, target_date, session, adapter) -> str:
+    fund_ids = tuple(getattr(adapter, "fund_ids", ()))
+    provider = getattr(adapter, "fund_id", type(adapter).__name__)
+    with connect(settings.database_path) as connection:
+        if fund_ids and _count_existing_funds(connection, fund_ids, target_date) == len(fund_ids):
+            LOGGER.info(
+                "fund values already present provider=%s count=%d date=%s",
+                provider,
+                len(fund_ids),
+                target_date,
+            )
+            return "already-present"
+
+    records = list(adapter.fetch(target_date, session, settings.http_timeout))
+    if not records:
+        LOGGER.info("fund values unavailable provider=%s date=%s", provider, target_date)
+        return "unavailable"
+
+    for record in records:
+        record.validate(target_date)
+
+    with connect(settings.database_path) as connection:
+        inserted = False
+        for record in records:
+            inserted = insert_fund_value(connection, record) or inserted
+    outcome = "inserted" if inserted else "already-present"
+    LOGGER.info(
+        "fund values %s provider=%s count=%d date=%s",
+        outcome,
+        provider,
+        len(records),
+        target_date,
+    )
+    return outcome
+
+
 def run(settings: Settings, today=None, session=None, adapter=None) -> str:
     today = today or datetime.now(ZoneInfo("Europe/Belgrade")).date()
     target_date = previous_business_day(today)
-    adapter = adapter if adapter is not None else load_adapter(settings.fund_adapter)
-    if adapter is None:
+    adapters = _configured_adapters(settings, adapter)
+    if not adapters:
         LOGGER.info("fund collector not configured")
         return "not-configured"
 
-    with connect(settings.database_path) as connection:
-        if fund_value_exists(connection, adapter.fund_id, target_date):
-            LOGGER.info("fund value already present fund=%s date=%s", adapter.fund_id, target_date)
-            return "already-present"
-
     session = session or build_session(settings.http_retries)
-    record = adapter.fetch(target_date, session, settings.http_timeout)
-    if record is None:
-        LOGGER.info("complete fund value unavailable fund=%s date=%s", adapter.fund_id, target_date)
-        return "unavailable"
-    record.validate(target_date)
+    outcomes: list[str] = []
+    errors: list[tuple[str, Exception]] = []
+    for current_adapter in adapters:
+        provider = getattr(current_adapter, "fund_id", type(current_adapter).__name__)
+        try:
+            outcomes.append(_run_adapter(settings, target_date, session, current_adapter))
+        except Exception as error:
+            errors.append((provider, error))
+            LOGGER.exception("fund provider failed provider=%s date=%s", provider, target_date)
 
-    with connect(settings.database_path) as connection:
-        inserted = insert_fund_value(connection, record)
-    outcome = "inserted" if inserted else "already-present"
-    LOGGER.info("fund value %s fund=%s date=%s", outcome, adapter.fund_id, target_date)
-    return outcome
+    if errors and not outcomes:
+        providers = ", ".join(provider for provider, _ in errors)
+        raise FundAdapterError(
+            f"All configured fund providers failed: {providers}"
+        ) from errors[0][1]
+    if errors:
+        LOGGER.warning(
+            "fund collection partially completed failed_providers=%s date=%s",
+            [provider for provider, _ in errors],
+            target_date,
+        )
+        return "partial"
+    if "inserted" in outcomes:
+        return "inserted"
+    if "unavailable" in outcomes:
+        return "unavailable"
+    return "already-present"
 
 
 def main() -> int:
@@ -55,4 +122,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

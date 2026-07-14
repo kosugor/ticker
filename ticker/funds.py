@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Protocol
+from typing import Protocol, Sequence
 
 import requests
 
@@ -37,16 +37,44 @@ class FundValue:
 
 class FundAdapter(Protocol):
     fund_id: str
+    fund_ids: tuple[str, ...]
 
     def fetch(
         self, target_date: date, session: requests.Session, timeout: float
-    ) -> FundValue | None: ...
+    ) -> Sequence[FundValue]: ...
 
 
 def load_adapter(name: str | None) -> FundAdapter | None:
     if name is None:
         return None
+    if name == "intesa_invest":
+        from ticker.intesa_invest import IntesaInvestAdapter
+
+        return IntesaInvestAdapter()
+    if name == "raiffeisen_invest":
+        from ticker.raiffeisen_invest import RaiffeisenInvestAdapter
+
+        return RaiffeisenInvestAdapter()
     raise FundAdapterError(
-        f"Unknown fund adapter {name!r}; no live fund-specific adapter is included"
+        f"Unknown fund adapter {name!r}; available adapters: "
+        "intesa_invest, raiffeisen_invest"
     )
 
+
+def load_adapters(names: str | None) -> tuple[FundAdapter, ...]:
+    if names is None:
+        return ()
+
+    adapters: list[FundAdapter] = []
+    seen: set[str] = set()
+    for raw_name in names.split(","):
+        name = raw_name.strip()
+        if not name:
+            raise FundAdapterError("Fund adapter names must not be empty")
+        if name in seen:
+            raise FundAdapterError(f"Duplicate fund adapter {name!r}")
+        adapter = load_adapter(name)
+        if adapter is not None:
+            adapters.append(adapter)
+        seen.add(name)
+    return tuple(adapters)

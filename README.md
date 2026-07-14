@@ -16,9 +16,12 @@ Run both collectors:
 .venv/bin/python run_collectors.py
 ```
 
-The default database, log, and lock files are created under `data/`. The fund
-collector intentionally reports `not configured` until a fund-specific adapter
-is implemented and selected.
+The default database, log, and lock files are created under `data/`. Enable one
+or more fund providers with a comma-separated adapter list:
+
+```bash
+TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest .venv/bin/python collect_fund_value.py
+```
 
 ## Configuration
 
@@ -31,7 +34,7 @@ is implemented and selected.
 | `TICKER_NBS_URL` | Official NBS partial exchange-rate page |
 | `TICKER_HTTP_TIMEOUT` | `15` seconds |
 | `TICKER_HTTP_RETRIES` | `2` |
-| `TICKER_FUND_ADAPTER` | unset |
+| `TICKER_FUND_ADAPTER` | unset; comma-separated `intesa_invest` and/or `raiffeisen_invest` |
 
 ## Cron
 
@@ -45,4 +48,3 @@ CRON_TZ=Europe/Belgrade
 
 The orchestrator always exits with status zero, as configured. Collector errors
 and partial failures must therefore be monitored through `data/ticker.log`.
-
