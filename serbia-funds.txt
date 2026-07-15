@@ -5,9 +5,8 @@ implemented adapters
 https://www.intesainvest.rs/
 https://www.raiffeiseninvest.rs/
 https://www.nlbfondovi.rs/
-
-adapters not to implemented
 https://unicreditinvest.rs/
 https://www.wvpfondovi.rs/dnevni-pregled/
+adapters not implemented
 https://vistarica.rs/
 https://www.eclecticacapital.com/

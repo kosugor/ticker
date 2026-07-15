@@ -67,10 +67,14 @@ def load_adapter(name: str | None) -> FundAdapter | None:
         from ticker.unicredit_invest import UniCreditInvestAdapter
 
         return UniCreditInvestAdapter()
+    if name == "wvp_fondovi":
+        from ticker.wvp_fondovi import WvpFondoviAdapter
+
+        return WvpFondoviAdapter()
     raise FundAdapterError(
         f"Unknown fund adapter {name!r}; available adapters: "
         "intesa_invest, raiffeisen_invest, nlb_fondovi, otp_invest, "
-        "unicredit_invest"
+        "unicredit_invest, wvp_fondovi"
     )
 
 
