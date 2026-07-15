@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ticker.calendar import previous_business_day
 from ticker.config import Settings
 from ticker.database import connect, insert_fund_value
 from ticker.funds import FundAdapterError, load_adapters
@@ -73,7 +72,7 @@ def _run_adapter(settings, target_date, session, adapter) -> str:
 
 def run(settings: Settings, today=None, session=None, adapter=None) -> str:
     today = today or datetime.now(ZoneInfo("Europe/Belgrade")).date()
-    target_date = previous_business_day(today)
+    target_date = today - timedelta(days=1)
     adapters = _configured_adapters(settings, adapter)
     if not adapters:
         LOGGER.info("fund collector not configured")

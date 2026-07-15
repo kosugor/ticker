@@ -116,6 +116,27 @@ def test_fund_stores_all_intesa_rows_and_skips_second_run(tmp_path) -> None:
     assert row == (2,)
 
 
+def test_fund_targets_calendar_yesterday_and_skips_fetch_when_present(tmp_path) -> None:
+    config = settings(tmp_path)
+    records = [
+        FundValue(
+            fund_id=fund_id,
+            value_date=date(2026, 7, 12),
+            investment_unit_value=Decimal("10.25"),
+            investment_unit_currency="EUR",
+            fund_assets_value=Decimal("1000.50"),
+            fund_assets_currency="EUR",
+            source_url="https://fund.example/",
+        )
+        for fund_id in Adapter.fund_ids
+    ]
+    adapter = Adapter(records)
+
+    assert run_fund(config, date(2026, 7, 13), Session(), adapter) == "inserted"
+    assert run_fund(config, date(2026, 7, 13), Session(), adapter) == "already-present"
+    assert adapter.calls == 1
+
+
 def test_fund_unconfigured_is_a_noop(tmp_path) -> None:
     assert run_fund(settings(tmp_path), date(2026, 7, 11)) == "not-configured"
 
