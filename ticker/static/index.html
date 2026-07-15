@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Current EUR/RSD exchange rates and Serbian investment fund values.">
+    <title>Ticker Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Ticker dashboard home">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <span>Ticker</span>
+      </a>
+      <nav aria-label="Dashboard sections">
+        <a href="#latest">Latest</a>
+        <a href="#rates">Exchange rates</a>
+        <a href="#funds">Fund values</a>
+        <a href="/docs">API docs</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Market data dashboard</p>
+          <h1 id="page-title">A clear view of your latest values.</h1>
+          <p class="hero-copy">Track the official EUR/RSD middle rate and browse collected investment fund values in one place.</p>
+        </div>
+        <div class="connection" id="connection-status" role="status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span>Connecting to API…</span>
+        </div>
+      </section>
+
+      <section id="latest" class="section" aria-labelledby="latest-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Snapshot</p>
+            <h2 id="latest-title">Latest values</h2>
+          </div>
+          <button class="button secondary" id="refresh-latest" type="button">Refresh</button>
+        </div>
+        <div class="snapshot-grid">
+          <article class="rate-card">
+            <p class="card-label">EUR / RSD middle rate</p>
+            <p class="big-number" id="latest-rate">—</p>
+            <p class="muted" id="latest-rate-date">Loading latest rate…</p>
+          </article>
+          <article class="panel latest-funds-panel">
+            <div class="panel-title">
+              <div>
+                <p class="card-label">Investment funds</p>
+                <h3>Most recent collection</h3>
+              </div>
+              <span class="count-badge" id="latest-fund-count">0</span>
+            </div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead><tr><th>Fund</th><th>Date</th><th class="numeric">Unit value</th></tr></thead>
+                <tbody id="latest-funds-body"><tr><td colspan="3" class="empty">Loading fund values…</td></tr></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="rates" class="section" aria-labelledby="rates-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2 id="rates-title">Exchange rates</h2>
+          </div>
+          <span class="result-count" id="rates-count"></span>
+        </div>
+        <form class="filter-bar" id="rates-filter">
+          <label>From <input type="date" name="start_date"></label>
+          <label>To <input type="date" name="end_date"></label>
+          <div class="filter-actions">
+            <button class="button" type="submit">Apply filters</button>
+            <button class="button secondary" type="reset">Clear</button>
+          </div>
+        </form>
+        <div class="panel table-wrap">
+          <table>
+            <thead><tr><th>Effective date</th><th class="numeric">EUR unit</th><th class="numeric">Middle rate (RSD)</th><th>Fetched</th></tr></thead>
+            <tbody id="rates-body"><tr><td colspan="4" class="empty">Loading exchange rates…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="funds" class="section" aria-labelledby="funds-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2 id="funds-title">Fund values</h2>
+          </div>
+          <span class="result-count" id="funds-count"></span>
+        </div>
+        <form class="filter-bar fund-filter" id="funds-filter">
+          <label>Fund ID <input type="text" name="fund_id" placeholder="e.g. fund-name"></label>
+          <label>From <input type="date" name="start_date"></label>
+          <label>To <input type="date" name="end_date"></label>
+          <div class="filter-actions">
+            <button class="button" type="submit">Apply filters</button>
+            <button class="button secondary" type="reset">Clear</button>
+          </div>
+        </form>
+        <div class="panel table-wrap">
+          <table>
+            <thead><tr><th>Fund</th><th>Date</th><th class="numeric">Unit value</th><th class="numeric">Assets</th><th>Source</th></tr></thead>
+            <tbody id="funds-body"><tr><td colspan="5" class="empty">Loading fund values…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>Data is shown as collected. <a href="/docs">Explore the API</a>.</footer>
+  </body>
+</html>

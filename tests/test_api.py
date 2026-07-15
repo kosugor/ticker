@@ -60,6 +60,19 @@ def test_health(tmp_path) -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_homepage_and_static_assets_are_served(tmp_path) -> None:
+    client = TestClient(create_app(settings(tmp_path / "ticker.sqlite3")))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Ticker Dashboard" in response.text
+    assert 'id="latest"' in response.text
+    assert client.get("/static/app.js").status_code == 200
+    assert client.get("/static/styles.css").status_code == 200
+
+
 def test_lists_exchange_rates_newest_first(tmp_path) -> None:
     response = populated_client(tmp_path).get("/exchange-rates")
 

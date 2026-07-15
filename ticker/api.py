@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from ticker.config import Settings
 from ticker.database import connect
@@ -15,6 +18,7 @@ FUND_VALUE_COLUMNS = (
     "fund_id, value_date, investment_unit_value, investment_unit_currency, "
     "fund_assets_value, fund_assets_currency, source_url, fetched_at_utc"
 )
+STATIC_DIR = Path(__file__).with_name("static")
 
 
 def _as_dicts(cursor: sqlite3.Cursor) -> list[dict[str, Any]]:
@@ -30,6 +34,11 @@ def _as_dict(cursor: sqlite3.Cursor) -> dict[str, Any] | None:
 def create_app(settings: Settings | None = None) -> FastAPI:
     configured_settings = settings or Settings.from_env()
     app = FastAPI(title="Ticker API")
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def homepage() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
 
     @app.get("/health")
     def health() -> dict[str, str]:
