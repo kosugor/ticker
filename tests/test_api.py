@@ -71,6 +71,16 @@ def test_lists_exchange_rates_newest_first(tmp_path) -> None:
     assert rows[0]["fetched_at_utc"]
 
 
+def test_filters_exchange_rates_by_date_range(tmp_path) -> None:
+    response = populated_client(tmp_path).get(
+        "/exchange-rates",
+        params={"start_date": "2026-07-15", "end_date": "2026-07-15"},
+    )
+
+    assert response.status_code == 200
+    assert [row["effective_date"] for row in response.json()] == ["2026-07-15"]
+
+
 def test_lists_fund_values_by_date_then_fund_id(tmp_path) -> None:
     response = populated_client(tmp_path).get("/fund-values")
 
@@ -87,6 +97,22 @@ def test_lists_fund_values_by_date_then_fund_id(tmp_path) -> None:
     assert rows[0]["fund_assets_currency"] == "EUR"
     assert rows[0]["source_url"] == "https://fund.example/fund-a"
     assert rows[0]["fetched_at_utc"]
+
+
+def test_filters_fund_values_by_date_range_and_fund_id(tmp_path) -> None:
+    response = populated_client(tmp_path).get(
+        "/fund-values",
+        params={
+            "start_date": "2026-07-14",
+            "end_date": "2026-07-14",
+            "fund_id": "fund-b",
+        },
+    )
+
+    assert response.status_code == 200
+    assert [(row["value_date"], row["fund_id"]) for row in response.json()] == [
+        ("2026-07-14", "fund-b")
+    ]
 
 
 def test_latest_values_uses_each_most_recent_date(tmp_path) -> None:

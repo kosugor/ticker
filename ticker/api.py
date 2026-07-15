@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import date
 from typing import Any
 
 from fastapi import FastAPI
@@ -35,24 +36,58 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/exchange-rates")
-    def exchange_rates() -> list[dict[str, Any]]:
+    def exchange_rates(
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        parameters: list[str] = []
+        if start_date is not None:
+            conditions.append("effective_date >= ?")
+            parameters.append(start_date.isoformat())
+        if end_date is not None:
+            conditions.append("effective_date <= ?")
+            parameters.append(end_date.isoformat())
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         with connect(configured_settings.database_path) as connection:
             return _as_dicts(
                 connection.execute(
                     f"""SELECT {EXCHANGE_RATE_COLUMNS}
                         FROM exchange_rates
-                        ORDER BY effective_date DESC"""
+                        {where_clause}
+                        ORDER BY effective_date DESC""",
+                    parameters,
                 )
             )
 
     @app.get("/fund-values")
-    def fund_values() -> list[dict[str, Any]]:
+    def fund_values(
+        start_date: date | None = None,
+        end_date: date | None = None,
+        fund_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        parameters: list[str] = []
+        if start_date is not None:
+            conditions.append("value_date >= ?")
+            parameters.append(start_date.isoformat())
+        if end_date is not None:
+            conditions.append("value_date <= ?")
+            parameters.append(end_date.isoformat())
+        if fund_id is not None:
+            conditions.append("fund_id = ?")
+            parameters.append(fund_id)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         with connect(configured_settings.database_path) as connection:
             return _as_dicts(
                 connection.execute(
                     f"""SELECT {FUND_VALUE_COLUMNS}
                         FROM fund_values
-                        ORDER BY value_date DESC, fund_id ASC"""
+                        {where_clause}
+                        ORDER BY value_date DESC, fund_id ASC""",
+                    parameters,
                 )
             )
 
