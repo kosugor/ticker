@@ -1,3 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ticker"
+version = "0.1.0"
+description = "Cron-friendly financial data collectors and dashboard"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.12,<5",
+    "fastapi>=0.110,<1",
+    "holidays>=0.50,<1",
+    "python-dotenv>=1.0,<2",
+    "requests>=2.31,<3",
+    "uvicorn>=0.29,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1",
+    "pytest>=8,<9",
+]
+
+[tool.setuptools.packages.find]
+include = ["ticker*"]
+
+[tool.setuptools.package-data]
+ticker = ["static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

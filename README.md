@@ -6,14 +6,13 @@ investment-fund values stored in SQLite.
 ## Setup
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+uv sync
 ```
 
 Run both collectors:
 
 ```bash
-.venv/bin/python run_collectors.py
+uv run python run_collectors.py
 ```
 
 The default database, log, and lock files are created under `data/`. Enable one
@@ -30,7 +29,7 @@ Configuration is read from the `.env` file in the project root.
 Start the FastAPI server from the project root:
 
 ```bash
-.venv/bin/uvicorn ticker.api:app --host 127.0.0.1 --port 8000
+uv run uvicorn ticker.api:app --host 127.0.0.1 --port 8000
 ```
 
 Open `http://127.0.0.1:8000/` to use the dashboard. It shows the latest
@@ -69,7 +68,7 @@ Use absolute paths and Belgrade civil time. For example, to retry at 09:00,
 
 ```cron
 CRON_TZ=Europe/Belgrade
-0 9,12,15,18 * * * cd /home/ubuntu/codex-workspace/ticker && /home/ubuntu/codex-workspace/ticker/.venv/bin/python run_collectors.py
+0 9,12,15,18 * * * cd /home/ubuntu/codex-workspace/ticker && /home/ubuntu/.local/bin/uv run python run_collectors.py
 ```
 
 The orchestrator always exits with status zero, as configured. Collector errors
