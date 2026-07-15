@@ -4,9 +4,10 @@ https://www.sec.gov.rs/index.php/sr/%D1%81%D0%BB%D1%83%D0%B6%D0%B1%D0%B5%D0%BD%D
 implemented adapters
 https://www.intesainvest.rs/
 https://www.raiffeiseninvest.rs/
+https://vistarica.rs/
+https://www.eclecticacapital.com/
 https://www.nlbfondovi.rs/
 https://unicreditinvest.rs/
 https://www.wvpfondovi.rs/dnevni-pregled/
-adapters not implemented
 https://vistarica.rs/
 https://www.eclecticacapital.com/

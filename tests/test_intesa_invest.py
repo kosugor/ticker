@@ -49,6 +49,22 @@ def test_returns_no_rows_for_other_date() -> None:
     assert parse_homepage_fund_values(HTML, date(2026, 7, 13), HOME_URL) == []
 
 
+def test_parses_currency_values_split_across_table_cells() -> None:
+    html = """
+    <h5>INTESA INVEST CASH DINAR <br/> 14.07.2026.</h5>
+    <p>Vrednost investicione jedinice</p>
+    <table><tr><td>10,96 EUR</td><td>1.286,60968 RSD</td></tr></table>
+    <p>Vrednost imovine fonda</p>
+    <table><tr><td>347.435.251,59 EUR</td><td>40.779.135.605,65 RSD</td></tr></table>
+    """
+
+    records = parse_homepage_fund_values(html, date(2026, 7, 14), HOME_URL)
+
+    assert len(records) == 1
+    assert records[0].investment_unit_value == Decimal("1286.60968")
+    assert records[0].fund_assets_value == Decimal("40779135605.65")
+
+
 def test_rejects_malformed_fund_block() -> None:
     broken = HTML.replace("Vrednost imovine fonda", "Broken")
     with pytest.raises(FundAdapterError, match="Missing fund-assets section"):

@@ -82,6 +82,19 @@ def _parse_amounts(value: str) -> dict[str, Decimal]:
     return pairs
 
 
+def _parse_amount_lines(
+    lines: list[str], start: int, fund_id: str, label: str
+) -> tuple[dict[str, Decimal], int]:
+    amounts: dict[str, Decimal] = {}
+    cursor = start
+    while cursor < len(lines) and _AMOUNT_PATTERN.search(lines[cursor]):
+        amounts.update(_parse_amounts(lines[cursor]))
+        cursor += 1
+    if not amounts:
+        raise FundAdapterError(f"Missing {label} value for {fund_id}")
+    return amounts, cursor
+
+
 def _value_for_currency(amounts: dict[str, Decimal], currency: str, fund_id: str, label: str) -> Decimal:
     if currency not in amounts:
         raise FundAdapterError(f"{label} for {fund_id} does not include currency {currency}")
@@ -123,16 +136,14 @@ def parse_homepage_fund_values(
 
             normalized = _normalized_text(current)
             if normalized == "vrednost investicione jedinice":
-                if cursor + 1 >= len(lines):
-                    raise FundAdapterError(f"Missing investment-unit value for {fund_id}")
-                unit_amounts = _parse_amounts(lines[cursor + 1])
-                cursor += 2
+                unit_amounts, cursor = _parse_amount_lines(
+                    lines, cursor + 1, fund_id, "investment-unit"
+                )
                 continue
             if normalized == "vrednost imovine fonda":
-                if cursor + 1 >= len(lines):
-                    raise FundAdapterError(f"Missing fund-assets value for {fund_id}")
-                assets_amounts = _parse_amounts(lines[cursor + 1])
-                cursor += 2
+                assets_amounts, cursor = _parse_amount_lines(
+                    lines, cursor + 1, fund_id, "fund-assets"
+                )
                 continue
 
             cursor += 1
