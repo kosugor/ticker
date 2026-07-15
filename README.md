@@ -25,6 +25,25 @@ TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest,nlb_fondovi,otp_invest,unicr
 
 Configuration is read from the `.env` file in the project root.
 
+## Web API
+
+Start the FastAPI server from the project root:
+
+```bash
+.venv/bin/uvicorn ticker.api:app --host 127.0.0.1 --port 8000
+```
+
+The API reads the SQLite file selected by `TICKER_DATABASE` (or the default
+`data/ticker.sqlite3`) and provides these JSON endpoints:
+
+- `GET /health`
+- `GET /exchange-rates`
+- `GET /fund-values`
+- `GET /latest-values`
+
+Interactive OpenAPI documentation is available at
+`http://127.0.0.1:8000/docs` while the server is running.
+
 ## Configuration
 
 | Variable | Default |
