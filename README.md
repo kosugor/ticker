@@ -20,7 +20,7 @@ The default database, log, and lock files are created under `data/`. Enable one
 or more fund providers with a comma-separated adapter list in `.env`:
 
 ```dotenv
-TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest,nlb_fondovi
+TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest,nlb_fondovi,otp_invest
 ```
 
 Configuration is read from the `.env` file in the project root.
@@ -36,7 +36,7 @@ Configuration is read from the `.env` file in the project root.
 | `TICKER_NBS_URL` | Official NBS partial exchange-rate page |
 | `TICKER_HTTP_TIMEOUT` | `15` seconds |
 | `TICKER_HTTP_RETRIES` | `2` |
-| `TICKER_FUND_ADAPTER` | unset; comma-separated `intesa_invest`, `raiffeisen_invest`, and/or `nlb_fondovi` |
+| `TICKER_FUND_ADAPTER` | unset; comma-separated `intesa_invest`, `raiffeisen_invest`, `nlb_fondovi`, and/or `otp_invest` |
 
 ## Cron
 
