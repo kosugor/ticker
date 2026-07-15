@@ -17,11 +17,13 @@ Run both collectors:
 ```
 
 The default database, log, and lock files are created under `data/`. Enable one
-or more fund providers with a comma-separated adapter list:
+or more fund providers with a comma-separated adapter list in `.env`:
 
-```bash
-TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest .venv/bin/python collect_fund_value.py
+```dotenv
+TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest
 ```
+
+Configuration is read from the `.env` file in the project root.
 
 ## Configuration
 
