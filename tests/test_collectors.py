@@ -139,7 +139,7 @@ def test_legacy_fund_values_are_migrated_without_source_url(tmp_path) -> None:
         )
 
     with connect(database_path) as connection:
-        columns = [row[1] for row in connection.execute("PRAGMA table_info(fund_values)")]
+        columns = list(connection.execute("PRAGMA table_info(fund_values)"))
         row = connection.execute(
             """SELECT society.society_id, fund.fund_id, value.value_date
                FROM fund_values AS value
@@ -147,8 +147,61 @@ def test_legacy_fund_values_are_migrated_without_source_url(tmp_path) -> None:
                JOIN societies AS society ON society.id = fund.society_id"""
         ).fetchone()
 
-    assert "source_url" not in columns
+    assert [column[1] for column in columns] == [
+        "fund_id", "value_date", "investment_unit_value", "investment_unit_currency",
+        "fund_assets_value", "fund_assets_currency", "fetched_at_utc",
+    ]
+    assert [(column[1], column[5]) for column in columns if column[5]] == [
+        ("fund_id", 2), ("value_date", 1),
+    ]
     assert row == ("legacy", "old-fund", "2026-07-10")
+
+
+def test_normalized_fund_values_are_migrated_to_composite_primary_key(tmp_path) -> None:
+    database_path = tmp_path / "normalized.sqlite3"
+    with sqlite3.connect(database_path) as connection:
+        connection.executescript(
+            """CREATE TABLE societies (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   society_id TEXT NOT NULL UNIQUE
+               );
+               CREATE TABLE funds (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   society_id INTEGER NOT NULL REFERENCES societies(id),
+                   fund_id TEXT NOT NULL,
+                   UNIQUE (society_id, fund_id)
+               );
+               CREATE TABLE fund_values (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   fund_id INTEGER NOT NULL REFERENCES funds(id),
+                   value_date TEXT NOT NULL,
+                   investment_unit_value TEXT NOT NULL,
+                   investment_unit_currency TEXT NOT NULL,
+                   fund_assets_value TEXT NOT NULL,
+                   fund_assets_currency TEXT NOT NULL,
+                   fetched_at_utc TEXT NOT NULL,
+                   UNIQUE (fund_id, value_date)
+               );
+               INSERT INTO societies (society_id) VALUES ('provider');
+               INSERT INTO funds (society_id, fund_id) VALUES (1, 'fund');
+               INSERT INTO fund_values
+               (fund_id, value_date, investment_unit_value, investment_unit_currency,
+                fund_assets_value, fund_assets_currency, fetched_at_utc)
+               VALUES (1, '2026-07-10', '1', 'EUR', '2', 'EUR', 'now');"""
+        )
+
+    with connect(database_path) as connection:
+        primary_key = [
+            (column[1], column[5])
+            for column in connection.execute("PRAGMA table_info(fund_values)")
+            if column[5]
+        ]
+        row = connection.execute(
+            "SELECT fund_id, value_date FROM fund_values"
+        ).fetchone()
+
+    assert primary_key == [("fund_id", 2), ("value_date", 1)]
+    assert row == (1, "2026-07-10")
 
 
 def test_fund_schema_normalizes_societies_and_funds(tmp_path) -> None:
@@ -160,9 +213,9 @@ def test_fund_schema_normalizes_societies_and_funds(tmp_path) -> None:
     with sqlite3.connect(config.database_path) as connection:
         society_columns = [row[1] for row in connection.execute("PRAGMA table_info(societies)")]
         fund_columns = [row[1] for row in connection.execute("PRAGMA table_info(funds)")]
-        value_columns = [row[1] for row in connection.execute("PRAGMA table_info(fund_values)")]
+        value_columns = list(connection.execute("PRAGMA table_info(fund_values)"))
         rows = connection.execute(
-            """SELECT society.id, fund.id, value.id, society.society_id, fund.fund_id
+            """SELECT society.id, fund.id, society.society_id, fund.fund_id
                FROM fund_values AS value
                JOIN funds AS fund ON fund.id = value.fund_id
                JOIN societies AS society ON society.id = fund.society_id
@@ -171,11 +224,13 @@ def test_fund_schema_normalizes_societies_and_funds(tmp_path) -> None:
 
     assert society_columns[0] == "id"
     assert fund_columns[:2] == ["id", "society_id"]
-    assert value_columns[:2] == ["id", "fund_id"]
-    assert "source_url" not in value_columns
+    assert [column[1] for column in value_columns[:2]] == ["fund_id", "value_date"]
+    assert [(column[1], column[5]) for column in value_columns if column[5]] == [
+        ("fund_id", 2), ("value_date", 1),
+    ]
     assert rows == [
-        (1, 1, 1, "intesa-invest", "fund-1"),
-        (1, 2, 2, "intesa-invest", "fund-2"),
+        (1, 1, "intesa-invest", "fund-1"),
+        (1, 2, "intesa-invest", "fund-2"),
     ]
 
 

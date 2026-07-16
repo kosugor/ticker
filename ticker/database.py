@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS funds (
 );
 
 CREATE TABLE IF NOT EXISTS fund_values (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     fund_id INTEGER NOT NULL REFERENCES funds(id),
     value_date TEXT NOT NULL,
     investment_unit_value TEXT NOT NULL,
@@ -37,10 +36,8 @@ CREATE TABLE IF NOT EXISTS fund_values (
     fund_assets_value TEXT NOT NULL,
     fund_assets_currency TEXT NOT NULL,
     fetched_at_utc TEXT NOT NULL,
-    UNIQUE (fund_id, value_date)
+    PRIMARY KEY (value_date, fund_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_fund_values_value_date ON fund_values(value_date);
 CREATE INDEX IF NOT EXISTS idx_funds_fund_id ON funds(fund_id);
 """
 
@@ -53,7 +50,7 @@ def connect(path: Path) -> Iterator[sqlite3.Connection]:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA busy_timeout = 30000")
         connection.executescript(SCHEMA)
-        _migrate_legacy_fund_values(connection)
+        _migrate_fund_values(connection)
         yield connection
         connection.commit()
     except Exception:
@@ -63,17 +60,30 @@ def connect(path: Path) -> Iterator[sqlite3.Connection]:
         connection.close()
 
 
-def _migrate_legacy_fund_values(connection: sqlite3.Connection) -> None:
+def _migrate_fund_values(connection: sqlite3.Connection) -> None:
     columns = {
-        row[1] for row in connection.execute("PRAGMA table_info(fund_values)")
+        row[1]: row for row in connection.execute("PRAGMA table_info(fund_values)")
     }
-    if "source_url" not in columns:
+    if (
+        set(columns)
+        == {
+            "fund_id",
+            "value_date",
+            "investment_unit_value",
+            "investment_unit_currency",
+            "fund_assets_value",
+            "fund_assets_currency",
+            "fetched_at_utc",
+        }
+        and columns["value_date"][5] == 1
+        and columns["fund_id"][5] == 2
+    ):
         return
 
     connection.execute("ALTER TABLE fund_values RENAME TO legacy_fund_values")
+    connection.execute("DROP INDEX IF EXISTS idx_fund_values_value_date")
     connection.executescript(
         """CREATE TABLE fund_values (
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
                fund_id INTEGER NOT NULL REFERENCES funds(id),
                value_date TEXT NOT NULL,
                investment_unit_value TEXT NOT NULL,
@@ -81,35 +91,41 @@ def _migrate_legacy_fund_values(connection: sqlite3.Connection) -> None:
                fund_assets_value TEXT NOT NULL,
                fund_assets_currency TEXT NOT NULL,
                fetched_at_utc TEXT NOT NULL,
-               UNIQUE (fund_id, value_date)
-           );
-           CREATE INDEX IF NOT EXISTS idx_fund_values_value_date ON fund_values(value_date);"""
+               PRIMARY KEY (value_date, fund_id)
+           );"""
     )
-    connection.execute("INSERT OR IGNORE INTO societies (society_id) VALUES ('legacy')")
-    connection.execute(
-        """INSERT OR IGNORE INTO funds (society_id, fund_id)
-           SELECT society.id, legacy.fund_id
-           FROM legacy_fund_values AS legacy
-           CROSS JOIN societies AS society
-           WHERE society.society_id = 'legacy'"""
-    )
-    connection.execute(
-        """INSERT OR IGNORE INTO fund_values
-           (fund_id, value_date, investment_unit_value, investment_unit_currency,
-            fund_assets_value, fund_assets_currency, fetched_at_utc)
-           SELECT fund.id, legacy.value_date, legacy.investment_unit_value,
-                  legacy.investment_unit_currency, legacy.fund_assets_value,
-                  legacy.fund_assets_currency, legacy.fetched_at_utc
-           FROM legacy_fund_values AS legacy
-           JOIN societies AS society ON society.society_id = 'legacy'
-           JOIN funds AS fund
-             ON fund.society_id = society.id AND fund.fund_id = legacy.fund_id"""
-    )
+    if "source_url" in columns:
+        connection.execute("INSERT OR IGNORE INTO societies (society_id) VALUES ('legacy')")
+        connection.execute(
+            """INSERT OR IGNORE INTO funds (society_id, fund_id)
+               SELECT society.id, legacy.fund_id
+               FROM legacy_fund_values AS legacy
+               CROSS JOIN societies AS society
+               WHERE society.society_id = 'legacy'"""
+        )
+        connection.execute(
+            """INSERT OR IGNORE INTO fund_values
+               (fund_id, value_date, investment_unit_value, investment_unit_currency,
+                fund_assets_value, fund_assets_currency, fetched_at_utc)
+               SELECT fund.id, legacy.value_date, legacy.investment_unit_value,
+                      legacy.investment_unit_currency, legacy.fund_assets_value,
+                      legacy.fund_assets_currency, legacy.fetched_at_utc
+               FROM legacy_fund_values AS legacy
+               JOIN societies AS society ON society.society_id = 'legacy'
+               JOIN funds AS fund
+                 ON fund.society_id = society.id AND fund.fund_id = legacy.fund_id"""
+        )
+    else:
+        connection.execute(
+            """INSERT OR IGNORE INTO fund_values
+               (fund_id, value_date, investment_unit_value, investment_unit_currency,
+                fund_assets_value, fund_assets_currency, fetched_at_utc)
+               SELECT fund_id, value_date, investment_unit_value,
+                      investment_unit_currency, fund_assets_value,
+                      fund_assets_currency, fetched_at_utc
+               FROM legacy_fund_values"""
+        )
     connection.execute("DROP TABLE legacy_fund_values")
-    connection.execute(
-        "CREATE INDEX IF NOT EXISTS idx_fund_values_value_date ON fund_values(value_date)"
-    )
-
 
 def exchange_rate_exists(connection: sqlite3.Connection, effective_date: date) -> bool:
     row = connection.execute(
