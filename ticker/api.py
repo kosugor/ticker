@@ -117,10 +117,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             latest_fund_values = _as_dicts(
                 connection.execute(
-                    f"""SELECT {FUND_VALUE_COLUMNS}
+                    f"""WITH complete_dates AS (
+                            SELECT fund.society_id, value.value_date
+                            FROM fund_values AS value
+                            JOIN funds AS fund ON fund.id = value.fund_id
+                            GROUP BY fund.society_id, value.value_date
+                            HAVING COUNT(DISTINCT value.fund_id) = (
+                                SELECT COUNT(*)
+                                FROM funds AS expected_fund
+                                WHERE expected_fund.society_id = fund.society_id
+                            )
+                        ), latest_complete_dates AS (
+                            SELECT society_id, MAX(value_date) AS value_date
+                            FROM complete_dates
+                            GROUP BY society_id
+                        )
+                        SELECT {FUND_VALUE_COLUMNS}
                         FROM {FUND_VALUE_FROM}
-                        WHERE value.value_date = (SELECT MAX(value_date) FROM fund_values)
-                        ORDER BY fund.fund_id ASC"""
+                        JOIN latest_complete_dates AS latest
+                          ON latest.society_id = fund.society_id
+                         AND latest.value_date = value.value_date
+                        ORDER BY society.society_id ASC, fund.fund_id ASC"""
                 )
             )
 
