@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
+from history_csv import write_shared_csv
+from ticker.intesa_invest import _fund_currency_from_fund_id, _fund_id_from_heading
 from urllib.request import Request, urlopen
 
 
@@ -215,7 +217,22 @@ def download(output: Path, timeout: float) -> tuple[int, int]:
         records = parse_history(fetch(history_url, timeout), history_url)
         print(f"  {len(records)} rows from {history_url}", file=sys.stderr)
         all_records.extend(records)
-    write_csv(output, all_records)
+    shared_records = []
+    for record in all_records:
+        fund_id = _fund_id_from_heading(record["fund_name"])
+        currency = _fund_currency_from_fund_id(fund_id)
+        suffix = currency.casefold()
+        shared_records.append({
+            "fund_id": fund_id,
+            "fund_name": record["fund_name"],
+            "source_url": record["history_url"],
+            "date": record["date"],
+            "unit_value": record[f"unit_value_{suffix}"],
+            "unit_currency": currency,
+            "fund_assets_value": record[f"assets_{suffix}"],
+            "fund_assets_currency": currency,
+        })
+    write_shared_csv(output, shared_records, "intesa-invest")
     return len(fund_urls), len(all_records)
 
 

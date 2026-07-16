@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin
-from history_csv import fetch, write_csv
+from history_csv import fetch, write_shared_csv
 
 ARCHIVE_URL = "https://www.nlbfondovi.rs/investicioni-fondovi/nlb-devizni"
 COMPONENT = re.compile(r'class="[^"]*js-unit-value-comparator[^"]*"[^>]*data-service-path="([^"]+)"|data-service-path="([^"]+)"[^>]*class="[^"]*js-unit-value-comparator')
@@ -31,7 +31,7 @@ def download(timeout: float) -> list[dict[str, object]]:
     return rows
 def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("-o","--output",type=Path,default=Path("nlbfondovi_history.csv")); parser.add_argument("--timeout",type=float,default=30); args=parser.parse_args()
-    try: rows=download(args.timeout); write_csv(args.output, rows)
+    try: rows=download(args.timeout); write_shared_csv(args.output, rows, "nlb-fondovi")
     except (HTTPError,URLError,OSError,ValueError,json.JSONDecodeError,KeyError) as error: parser.exit(1,f"error: {error}\n")
     print(f"Wrote {len(rows)} rows to {args.output}"); return 0
 if __name__ == "__main__": raise SystemExit(main())

@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from history_csv import fetch, write_csv
+from history_csv import fetch, write_shared_csv
 
 FUNDS = (("eclectica-capital-rsd-cash", "Eclectica RSD Cash UCITS fond", "RSD", "https://www.eclecticacapital.com/eclectica-rsd-cash-ucits-fund"),
          ("eclectica-capital-euro-cash", "Eclectica Euro Cash UCITS fond", "EUR", "https://www.eclecticacapital.com/eclectica-euro-cash-ucits-fund"))
@@ -30,7 +30,7 @@ def download(timeout: float) -> list[dict[str, object]]:
 
 def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument("-o","--output",type=Path,default=Path("eclecticacapital_history.csv")); parser.add_argument("--timeout",type=float,default=30); args=parser.parse_args()
-    try: rows=download(args.timeout); write_csv(args.output, rows)
+    try: rows=download(args.timeout); write_shared_csv(args.output, rows, "eclectica-capital")
     except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError) as error: parser.exit(1, f"error: {error}\n")
     print(f"Wrote {len(rows)} rows to {args.output}"); return 0
 if __name__ == "__main__": raise SystemExit(main())

@@ -5,4 +5,4 @@ from fund_history_csv_to_sqlite import DEFAULT_DATABASE, main
 
 
 if __name__ == "__main__":
-    raise SystemExit(main("UniCredit Invest", "unicreditinvest_history.csv", DEFAULT_DATABASE, "unicreditinvest_history"))
+    raise SystemExit(main("UniCredit Invest", "unicreditinvest_history.csv", DEFAULT_DATABASE))

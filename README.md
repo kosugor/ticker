@@ -29,12 +29,11 @@ Configuration is read from the `.env` file in the project root.
 The seed CSV files in `data/` contain the configured providers and their fund
 IDs:
 
-- `data/societies.csv` — one `society_id` per provider
-- `data/funds.csv` — `society_id,fund_id` pairs
+- `data/societies.csv` — `society_id,society_key` integer/provider pairs
+- `data/funds.csv` — `fund_id,society_id,fund_key` integer ID mappings
 
-The `society_id` in `funds.csv` is the provider's logical ID. When importing,
-resolve it to `societies.id`; do not copy it directly into the integer foreign
-key column in SQLite.
+Download CSVs use these integer IDs directly. Importers write the integer
+`funds.id` into `fund_values.fund_id`.
 
 ## Web dashboard and API
 

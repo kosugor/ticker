@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin, urlparse
+from history_csv import write_shared_csv
+from ticker.raiffeisen_invest import _FUNDS
 from urllib.request import Request, urlopen
 
 
@@ -304,7 +306,20 @@ def download(output: Path, timeout: float) -> tuple[int, int]:
             file=sys.stderr,
         )
         all_records.extend(records)
-    write_csv(output, all_records)
+    shared_records = []
+    for record in all_records:
+        definition = _FUNDS[f"/fond/{record['fund_slug']}"]
+        shared_records.append({
+            "fund_id": definition.fund_id,
+            "fund_name": record["fund_name"],
+            "source_url": record["detail_url"],
+            "date": record["date"],
+            "unit_value": record["unit_value"],
+            "unit_currency": record["currency"],
+            "fund_assets_value": "",
+            "fund_assets_currency": record["currency"],
+        })
+    write_shared_csv(output, shared_records, "raiffeisen-invest")
     return len(fund_urls), len(all_records)
 
 

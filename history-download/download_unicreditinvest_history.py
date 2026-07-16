@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from history_csv import fetch, write_csv
+from history_csv import fetch, write_shared_csv
 
 URL = "https://unicreditinvest.rs/api/fund?pagination%5BpageSize%5D=25&populate%5BdailyValues%5D=*"
 FUNDS = {
@@ -37,7 +37,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=30)
     args = parser.parse_args()
     try:
-        rows = download(args.timeout); write_csv(args.output, rows)
+        rows = download(args.timeout); write_shared_csv(args.output, rows, "unicredit-invest")
     except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError) as error:
         parser.exit(1, f"error: {error}\n")
     print(f"Wrote {len(rows)} rows to {args.output}")

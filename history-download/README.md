@@ -74,8 +74,21 @@ writing fails.
 
 ## Import the CSV into SQLite
 
-Import `intesainvest_history.csv` into the `intesainvest_history` table in
-`data/ticker.sqlite3` with:
+Import all normalized provider histories (NLB, UniCredit, WVP, Vista Rica, and
+Eclectica Capital) into the application's `fund_values`
+table with:
+
+```sh
+python3 import_all_histories_csv_to_sqlite.py
+```
+
+This initializes `../data/ticker.sqlite3` from `../data/societies.csv` and
+`../data/funds.csv` first. Each history row resolves its provider and fund
+against those seed tables, then stores the integer `funds.id` in
+`fund_values.fund_id`. Re-running the command is safe.
+
+Import `intesainvest_history.csv` into the legacy `intesainvest_history` table
+with:
 
 ```sh
 python3 import_intesainvest_csv_to_sqlite.py
@@ -101,8 +114,7 @@ database writing fails.
 
 ## Import the Raiffeisen CSV into SQLite
 
-Import `raiffeiseninvest_history.csv` into the `raiffeiseninvest_history` table in
-`data/ticker.sqlite3` with:
+Import `raiffeiseninvest_history.csv` into its provider history table with:
 
 ```sh
 python3 import_raiffeiseninvest_csv_to_sqlite.py
