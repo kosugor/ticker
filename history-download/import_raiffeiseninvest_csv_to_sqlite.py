@@ -12,8 +12,8 @@ from pathlib import Path
 
 
 DEFAULT_INPUT = "raiffeiseninvest_history.csv"
-DEFAULT_DATABASE = "raiffeiseninvest_history.db"
-DEFAULT_TABLE = "historical_values"
+DEFAULT_DATABASE = "data/ticker.sqlite3"
+DEFAULT_TABLE = "raiffeiseninvest_history"
 CSV_COLUMNS = (
     "fund_name",
     "fund_slug",

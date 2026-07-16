@@ -14,6 +14,7 @@ CSV_COLUMNS = (
     "fund_id", "fund_name", "source_url", "date", "unit_value", "unit_currency",
     "fund_assets_value", "fund_assets_currency",
 )
+DEFAULT_DATABASE = "data/ticker.sqlite3"
 
 
 def quote_identifier(identifier: str) -> str:
@@ -25,7 +26,7 @@ def quote_identifier(identifier: str) -> str:
 
 def normalize_date(date_text: str, row_number: int) -> str:
     """Convert the supported provider date formats to ISO format."""
-    for format_string in ("%Y-%m-%d", "%d.%m.%Y"):
+    for format_string in ("%Y-%m-%d", "%d.%m.%Y", "%d. %m. %Y"):
         try:
             return datetime.strptime(date_text, format_string).date().isoformat()
         except ValueError:
@@ -84,8 +85,8 @@ def import_csv(input_path: Path, database_path: Path, table: str) -> int:
     return row_count
 
 
-def main(provider_name: str, default_input: str, default_database: str,
-         argv: list[str] | None = None) -> int:
+def main(provider_name: str, default_input: str, default_database: str = DEFAULT_DATABASE,
+         default_table: str = "historical_values", argv: list[str] | None = None) -> int:
     """Run a provider-specific normalized-history importer CLI."""
     parser = argparse.ArgumentParser(
         description=f"Import {provider_name} historical-values CSV data into SQLite."
@@ -94,8 +95,8 @@ def main(provider_name: str, default_input: str, default_database: str,
                         help=f"input CSV path (default: {default_input})")
     parser.add_argument("-d", "--database", type=Path, default=Path(default_database),
                         help=f"output SQLite database path (default: {default_database})")
-    parser.add_argument("-t", "--table", default="historical_values",
-                        help="destination table name (default: historical_values)")
+    parser.add_argument("-t", "--table", default=default_table,
+                        help=f"destination table name (default: {default_table})")
     args = parser.parse_args(argv)
     try:
         row_count = import_csv(args.input, args.database, args.table)

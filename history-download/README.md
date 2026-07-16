@@ -74,8 +74,8 @@ writing fails.
 
 ## Import the CSV into SQLite
 
-Import `intesainvest_history.csv` into the `historical_values` table in
-`intesainvest_history.db` with:
+Import `intesainvest_history.csv` into the `intesainvest_history` table in
+`data/ticker.sqlite3` with:
 
 ```sh
 python3 import_intesainvest_csv_to_sqlite.py
@@ -101,8 +101,8 @@ database writing fails.
 
 ## Import the Raiffeisen CSV into SQLite
 
-Import `raiffeiseninvest_history.csv` into the `historical_values` table in
-`raiffeiseninvest_history.db` with:
+Import `raiffeiseninvest_history.csv` into the `raiffeiseninvest_history` table in
+`data/ticker.sqlite3` with:
 
 ```sh
 python3 import_raiffeiseninvest_csv_to_sqlite.py
