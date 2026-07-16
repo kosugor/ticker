@@ -18,12 +18,13 @@ def latest_exchange_rate(connection: sqlite3.Connection):
 
 def latest_fund_values(connection: sqlite3.Connection):
     return connection.execute(
-        """SELECT fund_id, value_date, investment_unit_value,
-                  investment_unit_currency, fund_assets_value,
-                  fund_assets_currency
-           FROM fund_values
-           WHERE value_date = (SELECT MAX(value_date) FROM fund_values)
-           ORDER BY fund_id"""
+        """SELECT fund.fund_id, value.value_date, value.investment_unit_value,
+                  value.investment_unit_currency, value.fund_assets_value,
+                  value.fund_assets_currency
+           FROM fund_values AS value
+           JOIN funds AS fund ON fund.id = value.fund_id
+           WHERE value.value_date = (SELECT MAX(value_date) FROM fund_values)
+           ORDER BY fund.fund_id"""
     ).fetchall()
 
 

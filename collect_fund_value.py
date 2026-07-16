@@ -14,15 +14,17 @@ from ticker.logging_config import configure_logging
 LOGGER = logging.getLogger("collect_fund_value")
 
 
-def _count_existing_funds(connection, fund_ids, target_date):
+def _count_existing_funds(connection, society_id, fund_ids, target_date):
     if not fund_ids:
         return 0
     placeholders = ", ".join("?" for _ in fund_ids)
     query = (
-        "SELECT COUNT(DISTINCT fund_id) FROM fund_values "
-        f"WHERE value_date = ? AND fund_id IN ({placeholders})"
+        "SELECT COUNT(DISTINCT fund.id) FROM fund_values AS value "
+        "JOIN funds AS fund ON fund.id = value.fund_id "
+        "JOIN societies AS society ON society.id = fund.society_id "
+        f"WHERE society.society_id = ? AND value.value_date = ? AND fund.fund_id IN ({placeholders})"
     )
-    row = connection.execute(query, (target_date.isoformat(), *fund_ids)).fetchone()
+    row = connection.execute(query, (society_id, target_date.isoformat(), *fund_ids)).fetchone()
     return int(row[0] if row is not None else 0)
 
 
@@ -38,7 +40,7 @@ def _run_adapter(settings, target_date, session, adapter) -> str:
     fund_ids = tuple(getattr(adapter, "fund_ids", ()))
     provider = getattr(adapter, "fund_id", type(adapter).__name__)
     with connect(settings.database_path) as connection:
-        if fund_ids and _count_existing_funds(connection, fund_ids, target_date) == len(fund_ids):
+        if fund_ids and _count_existing_funds(connection, provider, fund_ids, target_date) == len(fund_ids):
             LOGGER.info(
                 "fund values already present provider=%s count=%d date=%s",
                 provider,
@@ -58,7 +60,7 @@ def _run_adapter(settings, target_date, session, adapter) -> str:
     with connect(settings.database_path) as connection:
         inserted = False
         for record in records:
-            inserted = insert_fund_value(connection, record) or inserted
+            inserted = insert_fund_value(connection, provider, record) or inserted
     outcome = "inserted" if inserted else "already-present"
     LOGGER.info(
         "fund values %s provider=%s count=%d date=%s",

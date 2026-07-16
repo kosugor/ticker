@@ -108,14 +108,7 @@ function renderFunds(funds) {
     cell(row, formatDate(fund.value_date));
     cell(row, `${formatNumber(fund.investment_unit_value)} ${fund.investment_unit_currency}`, "numeric");
     cell(row, `${formatNumber(fund.fund_assets_value, 2)} ${fund.fund_assets_currency}`, "numeric");
-    const sourceCell = row.insertCell();
-    const link = document.createElement("a");
-    link.className = "source-link";
-    link.href = fund.source_url;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "View source";
-    sourceCell.append(link);
+    cell(row, fund.society_id);
   });
 }
 

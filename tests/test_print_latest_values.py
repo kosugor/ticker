@@ -24,13 +24,13 @@ def test_prints_only_values_from_each_latest_date(tmp_path, capsys) -> None:
         insert_exchange_rate(connection, date(2026, 7, 14), Decimal("117.10"))
         insert_exchange_rate(connection, date(2026, 7, 15), Decimal("117.20"))
         insert_fund_value(
-            connection, fund_value("old-fund", date(2026, 7, 13), "9.00")
+            connection, "fund-example", fund_value("old-fund", date(2026, 7, 13), "9.00")
         )
         insert_fund_value(
-            connection, fund_value("fund-b", date(2026, 7, 14), "20.00")
+            connection, "fund-example", fund_value("fund-b", date(2026, 7, 14), "20.00")
         )
         insert_fund_value(
-            connection, fund_value("fund-a", date(2026, 7, 14), "10.00")
+            connection, "fund-example", fund_value("fund-a", date(2026, 7, 14), "10.00")
         )
 
     print_latest_values(database_path)

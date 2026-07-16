@@ -446,12 +446,12 @@ def fetch_nlb(
     return list(records.values())
 
 
-def insert_records(connection, records: Iterable[FundValue]) -> ProviderResult:
+def insert_records(connection, society_id: str, records: Iterable[FundValue]) -> ProviderResult:
     inserted = 0
     skipped = 0
     for record in records:
         record.validate(record.value_date)
-        if insert_fund_value(connection, record):
+        if insert_fund_value(connection, society_id, record):
             inserted += 1
         else:
             skipped += 1
@@ -514,9 +514,9 @@ def main(argv: list[str] | None = None) -> int:
             nlb_records = fetch_nlb(session, args.timeout)
 
         with connect(args.database) as connection:
-            intesa_result = insert_records(connection, intesa_records)
-            raiffeisen_result = insert_records(connection, raiffeisen_records)
-            nlb_result = insert_records(connection, nlb_records)
+            intesa_result = insert_records(connection, "intesa-invest", intesa_records)
+            raiffeisen_result = insert_records(connection, "raiffeisen-invest", raiffeisen_records)
+            nlb_result = insert_records(connection, "nlb-fondovi", nlb_records)
             final_total = connection.execute(
                 "SELECT COUNT(*) FROM fund_values"
             ).fetchone()[0]

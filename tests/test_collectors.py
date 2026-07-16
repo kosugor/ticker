@@ -6,6 +6,7 @@ import pytest
 from collect_exchange_rate import run as run_exchange
 from collect_fund_value import run as run_fund
 from ticker.config import Settings
+from ticker.database import connect
 from ticker.funds import FundAdapterError, FundValue
 
 
@@ -116,6 +117,68 @@ def test_fund_stores_all_intesa_rows_and_skips_second_run(tmp_path) -> None:
     assert row == (2,)
 
 
+def test_legacy_fund_values_are_migrated_without_source_url(tmp_path) -> None:
+    database_path = tmp_path / "legacy.sqlite3"
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """CREATE TABLE fund_values (
+                   fund_id TEXT NOT NULL,
+                   value_date TEXT NOT NULL,
+                   investment_unit_value TEXT NOT NULL,
+                   investment_unit_currency TEXT NOT NULL,
+                   fund_assets_value TEXT NOT NULL,
+                   fund_assets_currency TEXT NOT NULL,
+                   source_url TEXT NOT NULL,
+                   fetched_at_utc TEXT NOT NULL,
+                   PRIMARY KEY (fund_id, value_date)
+               )"""
+        )
+        connection.execute(
+            "INSERT INTO fund_values VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            ("old-fund", "2026-07-10", "1", "EUR", "2", "EUR", "https://example.test", "now"),
+        )
+
+    with connect(database_path) as connection:
+        columns = [row[1] for row in connection.execute("PRAGMA table_info(fund_values)")]
+        row = connection.execute(
+            """SELECT society.society_id, fund.fund_id, value.value_date
+               FROM fund_values AS value
+               JOIN funds AS fund ON fund.id = value.fund_id
+               JOIN societies AS society ON society.id = fund.society_id"""
+        ).fetchone()
+
+    assert "source_url" not in columns
+    assert row == ("legacy", "old-fund", "2026-07-10")
+
+
+def test_fund_schema_normalizes_societies_and_funds(tmp_path) -> None:
+    config = settings(tmp_path)
+    adapter = Adapter([fund_record("fund-1"), fund_record("fund-2")])
+
+    assert run_fund(config, date(2026, 7, 11), Session(), adapter) == "inserted"
+
+    with sqlite3.connect(config.database_path) as connection:
+        society_columns = [row[1] for row in connection.execute("PRAGMA table_info(societies)")]
+        fund_columns = [row[1] for row in connection.execute("PRAGMA table_info(funds)")]
+        value_columns = [row[1] for row in connection.execute("PRAGMA table_info(fund_values)")]
+        rows = connection.execute(
+            """SELECT society.id, fund.id, value.id, society.society_id, fund.fund_id
+               FROM fund_values AS value
+               JOIN funds AS fund ON fund.id = value.fund_id
+               JOIN societies AS society ON society.id = fund.society_id
+               ORDER BY fund.fund_id"""
+        ).fetchall()
+
+    assert society_columns[0] == "id"
+    assert fund_columns[:2] == ["id", "society_id"]
+    assert value_columns[:2] == ["id", "fund_id"]
+    assert "source_url" not in value_columns
+    assert rows == [
+        (1, 1, 1, "intesa-invest", "fund-1"),
+        (1, 2, 2, "intesa-invest", "fund-2"),
+    ]
+
+
 def test_fund_targets_calendar_yesterday_and_skips_fetch_when_present(tmp_path) -> None:
     config = settings(tmp_path)
     records = [
@@ -177,7 +240,10 @@ def test_fund_collects_multiple_providers(tmp_path) -> None:
     assert run_fund(config, date(2026, 7, 11), Session(), [first, second]) == "already-present"
     assert first.calls == second.calls == 1
     with sqlite3.connect(config.database_path) as connection:
-        rows = connection.execute("SELECT fund_id FROM fund_values ORDER BY fund_id")
+        rows = connection.execute(
+            "SELECT fund.fund_id FROM fund_values AS value "
+            "JOIN funds AS fund ON fund.id = value.fund_id ORDER BY fund.fund_id"
+        )
         ids = [row[0] for row in rows]
     assert ids == ["provider-1-fund", "provider-2-fund"]
 

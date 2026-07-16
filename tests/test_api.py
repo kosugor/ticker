@@ -39,13 +39,13 @@ def populated_client(tmp_path) -> TestClient:
         insert_exchange_rate(connection, date(2026, 7, 14), Decimal("117.10"))
         insert_exchange_rate(connection, date(2026, 7, 15), Decimal("117.20"))
         insert_fund_value(
-            connection, fund_value("old-fund", date(2026, 7, 13), "9.00")
+            connection, "fund-example", fund_value("old-fund", date(2026, 7, 13), "9.00")
         )
         insert_fund_value(
-            connection, fund_value("fund-b", date(2026, 7, 14), "20.00")
+            connection, "fund-example", fund_value("fund-b", date(2026, 7, 14), "20.00")
         )
         insert_fund_value(
-            connection, fund_value("fund-a", date(2026, 7, 14), "10.00")
+            connection, "fund-example", fund_value("fund-a", date(2026, 7, 14), "10.00")
         )
 
     return TestClient(create_app(settings(database_path)))
@@ -108,7 +108,8 @@ def test_lists_fund_values_by_date_then_fund_id(tmp_path) -> None:
     assert rows[0]["investment_unit_currency"] == "EUR"
     assert rows[0]["fund_assets_value"] == "1000.50"
     assert rows[0]["fund_assets_currency"] == "EUR"
-    assert rows[0]["source_url"] == "https://fund.example/fund-a"
+    assert rows[0]["society_id"] == "fund-example"
+    assert "source_url" not in rows[0]
     assert rows[0]["fetched_at_utc"]
 
 

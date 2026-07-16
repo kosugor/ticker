@@ -15,9 +15,13 @@ from ticker.database import connect
 
 EXCHANGE_RATE_COLUMNS = "effective_date, eur_unit, middle_rate, fetched_at_utc"
 FUND_VALUE_COLUMNS = (
-    "fund_id, value_date, investment_unit_value, investment_unit_currency, "
-    "fund_assets_value, fund_assets_currency, source_url, fetched_at_utc"
+    "society.society_id AS society_id, fund.fund_id, value.value_date, "
+    "value.investment_unit_value, value.investment_unit_currency, "
+    "value.fund_assets_value, value.fund_assets_currency, value.fetched_at_utc"
 )
+FUND_VALUE_FROM = """fund_values AS value
+JOIN funds AS fund ON fund.id = value.fund_id
+JOIN societies AS society ON society.id = fund.society_id"""
 STATIC_DIR = Path(__file__).with_name("static")
 
 
@@ -79,13 +83,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         conditions: list[str] = []
         parameters: list[str] = []
         if start_date is not None:
-            conditions.append("value_date >= ?")
+            conditions.append("value.value_date >= ?")
             parameters.append(start_date.isoformat())
         if end_date is not None:
-            conditions.append("value_date <= ?")
+            conditions.append("value.value_date <= ?")
             parameters.append(end_date.isoformat())
         if fund_id is not None:
-            conditions.append("fund_id = ?")
+            conditions.append("fund.fund_id = ?")
             parameters.append(fund_id)
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
@@ -93,9 +97,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return _as_dicts(
                 connection.execute(
                     f"""SELECT {FUND_VALUE_COLUMNS}
-                        FROM fund_values
+                        FROM {FUND_VALUE_FROM}
                         {where_clause}
-                        ORDER BY value_date DESC, fund_id ASC""",
+                        ORDER BY value.value_date DESC, fund.fund_id ASC""",
                     parameters,
                 )
             )
@@ -114,9 +118,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             latest_fund_values = _as_dicts(
                 connection.execute(
                     f"""SELECT {FUND_VALUE_COLUMNS}
-                        FROM fund_values
-                        WHERE value_date = (SELECT MAX(value_date) FROM fund_values)
-                        ORDER BY fund_id ASC"""
+                        FROM {FUND_VALUE_FROM}
+                        WHERE value.value_date = (SELECT MAX(value_date) FROM fund_values)
+                        ORDER BY fund.fund_id ASC"""
                 )
             )
 
