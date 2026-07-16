@@ -5,10 +5,11 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ticker.config import Settings
-from ticker.database import connect, insert_fund_value
+from ticker.database import connect, insert_fund_value_ids
 from ticker.funds import FundAdapterError, load_adapters
 from ticker.http import build_session
 from ticker.logging_config import configure_logging
+from ticker.seed import ensure_seeded_database, load_seed_ids
 
 
 LOGGER = logging.getLogger("collect_fund_value")
@@ -22,7 +23,7 @@ def _count_existing_funds(connection, society_id, fund_ids, target_date):
         "SELECT COUNT(DISTINCT fund.id) FROM fund_values AS value "
         "JOIN funds AS fund ON fund.id = value.fund_id "
         "JOIN societies AS society ON society.id = fund.society_id "
-        f"WHERE society.society_id = ? AND value.value_date = ? AND fund.fund_id IN ({placeholders})"
+        f"WHERE society.id = ? AND value.value_date = ? AND fund.id IN ({placeholders})"
     )
     row = connection.execute(query, (society_id, target_date.isoformat(), *fund_ids)).fetchone()
     return int(row[0] if row is not None else 0)
@@ -39,8 +40,17 @@ def _configured_adapters(settings: Settings, adapter):
 def _run_adapter(settings, target_date, session, adapter) -> str:
     fund_ids = tuple(getattr(adapter, "fund_ids", ()))
     provider = getattr(adapter, "fund_id", type(adapter).__name__)
+    ensure_seeded_database(settings.database_path)
+    society_ids, fund_ids_by_key = load_seed_ids()
+    try:
+        society_db_id = society_ids[provider]
+        fund_db_ids = tuple(fund_ids_by_key[fund_id] for fund_id in fund_ids)
+    except KeyError as error:
+        raise FundAdapterError(
+            f"Missing seed ID for provider or fund: {error.args[0]!r}"
+        ) from error
     with connect(settings.database_path) as connection:
-        if fund_ids and _count_existing_funds(connection, provider, fund_ids, target_date) == len(fund_ids):
+        if fund_db_ids and _count_existing_funds(connection, society_db_id, fund_db_ids, target_date) == len(fund_db_ids):
             LOGGER.info(
                 "fund values already present provider=%s count=%d date=%s",
                 provider,
@@ -60,7 +70,15 @@ def _run_adapter(settings, target_date, session, adapter) -> str:
     with connect(settings.database_path) as connection:
         inserted = False
         for record in records:
-            inserted = insert_fund_value(connection, provider, record) or inserted
+            try:
+                fund_db_id = fund_ids_by_key[record.fund_id]
+            except KeyError as error:
+                raise FundAdapterError(
+                    f"Missing seed ID for fund: {record.fund_id!r}"
+                ) from error
+            inserted = insert_fund_value_ids(
+                connection, society_db_id, fund_db_id, record
+            ) or inserted
     outcome = "inserted" if inserted else "already-present"
     LOGGER.info(
         "fund values %s provider=%s count=%d date=%s",

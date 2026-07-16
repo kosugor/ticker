@@ -194,3 +194,28 @@ def insert_fund_value(connection: sqlite3.Connection, society_id: str, record: o
         ),
     )
     return cursor.rowcount == 1
+
+
+def insert_fund_value_ids(
+    connection: sqlite3.Connection, society_id: int, fund_id: int, record: object
+) -> bool:
+    """Insert a value using the integer IDs from the seed tables."""
+    cursor = connection.execute(
+        """INSERT OR IGNORE INTO fund_values
+           (fund_id, value_date, investment_unit_value, investment_unit_currency,
+            fund_assets_value, fund_assets_currency, fetched_at_utc)
+           SELECT id, ?, ?, ?, ?, ?, ?
+           FROM funds
+           WHERE id = ? AND society_id = ?""",
+        (
+            record.value_date.isoformat(),
+            str(record.investment_unit_value),
+            record.investment_unit_currency,
+            str(record.fund_assets_value),
+            record.fund_assets_currency,
+            datetime.now(timezone.utc).isoformat(),
+            fund_id,
+            society_id,
+        ),
+    )
+    return cursor.rowcount == 1
