@@ -5,4 +5,8 @@ __pycache__/
 *.py[cod]
 data/
 *.csv
+!data/
+data/*
+!data/societies.csv
+!data/funds.csv
 ticker.egg-info/

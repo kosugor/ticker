@@ -24,6 +24,18 @@ TICKER_FUND_ADAPTER=intesa_invest,raiffeisen_invest,nlb_fondovi,otp_invest,unicr
 
 Configuration is read from the `.env` file in the project root.
 
+## Initial society and fund data
+
+The seed CSV files in `data/` contain the configured providers and their fund
+IDs:
+
+- `data/societies.csv` — one `society_id` per provider
+- `data/funds.csv` — `society_id,fund_id` pairs
+
+The `society_id` in `funds.csv` is the provider's logical ID. When importing,
+resolve it to `societies.id`; do not copy it directly into the integer foreign
+key column in SQLite.
+
 ## Web dashboard and API
 
 Start the FastAPI server from the project root:
