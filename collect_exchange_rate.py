@@ -33,9 +33,7 @@ def run(settings: Settings, today=None, session=None) -> str:
         return "unavailable"
 
     with connect(settings.database_path) as connection:
-        inserted = insert_exchange_rate(
-            connection, record.effective_date, record.rate, record.eur_unit
-        )
+        inserted = insert_exchange_rate(connection, record.effective_date, record.rate)
     outcome = "inserted" if inserted else "already-present"
     LOGGER.info("official EUR/RSD rate %s date=%s", outcome, target_date)
     return outcome

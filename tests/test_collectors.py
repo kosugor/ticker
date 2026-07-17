@@ -67,9 +67,9 @@ def test_exchange_insert_has_no_source_url_and_second_run_skips_http(tmp_path) -
     assert run_exchange(config, date(2026, 7, 11), session) == "already-present"
     assert session.calls == 1
     with sqlite3.connect(config.database_path) as connection:
-        columns = [row[1] for row in connection.execute("PRAGMA table_info(exchange_rates)")]
+        columns = [row[1] for row in connection.execute("PRAGMA table_info(eur_exchange_rates)")]
         row = connection.execute(
-            "SELECT effective_date, middle_rate FROM exchange_rates"
+            "SELECT effective_date, middle_rate FROM eur_exchange_rates"
         ).fetchone()
     assert "source_url" not in columns
     assert row == ("2026-07-13", "117.3638")
@@ -81,7 +81,7 @@ def test_indicative_only_is_not_stored(tmp_path) -> None:
                       <th>EUR/RSD</th><th class="kurs_e">999,9</th></tbody>""")
     assert run_exchange(config, date(2026, 7, 11), session) == "unavailable"
     with sqlite3.connect(config.database_path) as connection:
-        assert connection.execute("SELECT count(*) FROM exchange_rates").fetchone()[0] == 0
+        assert connection.execute("SELECT count(*) FROM eur_exchange_rates").fetchone()[0] == 0
 
 
 def test_fund_stores_all_intesa_rows_and_skips_second_run(tmp_path) -> None:

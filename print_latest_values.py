@@ -9,8 +9,8 @@ from ticker.database import connect
 
 def latest_exchange_rate(connection: sqlite3.Connection):
     return connection.execute(
-        """SELECT effective_date, eur_unit, middle_rate
-           FROM exchange_rates
+        """SELECT effective_date, middle_rate
+           FROM eur_exchange_rates
            ORDER BY effective_date DESC
            LIMIT 1"""
     ).fetchone()
@@ -36,8 +36,8 @@ def print_latest_values(database_path: Path) -> None:
     if exchange_rate is None:
         print("Exchange rate: no data")
     else:
-        effective_date, eur_unit, middle_rate = exchange_rate
-        print(f"Exchange rate ({effective_date}): {eur_unit} EUR = {middle_rate} RSD")
+        effective_date, middle_rate = exchange_rate
+        print(f"Exchange rate ({effective_date}): 1 EUR = {middle_rate} RSD")
 
     if not fund_values:
         print("Fund values: no data")

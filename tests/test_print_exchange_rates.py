@@ -10,14 +10,12 @@ def test_prints_all_exchange_rates_in_effective_date_order(tmp_path, capsys) -> 
     database_path = tmp_path / "ticker.sqlite3"
     with connect(database_path) as connection:
         insert_exchange_rate(connection, date(2026, 7, 15), Decimal("117.20"))
-        insert_exchange_rate(
-            connection, date(2026, 7, 14), Decimal("1171.00"), eur_unit=10
-        )
+        insert_exchange_rate(connection, date(2026, 7, 14), Decimal("1171.00"))
 
     script.print_exchange_rates(database_path)
 
     assert capsys.readouterr().out == (
-        "Exchange rate (2026-07-14): 10 EUR = 1171.00 RSD\n"
+        "Exchange rate (2026-07-14): 1 EUR = 1171.00 RSD\n"
         "Exchange rate (2026-07-15): 1 EUR = 117.20 RSD\n"
     )
 

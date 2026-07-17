@@ -54,7 +54,16 @@ The API reads the SQLite file selected by `TICKER_DATABASE` (or the default
 - `GET /health`
 - `GET /exchange-rates`
 - `GET /fund-values`
+- `GET /fund-values/{fund_id}`
 - `GET /latest-values`
+
+`/fund-values/{fund_id}` returns all stored values for one fund, newest first.
+Use inclusive `start_date` and `end_date` query parameters to filter the date
+range, for example:
+
+```text
+GET /fund-values/fund-a?start_date=2026-07-01&end_date=2026-07-15
+```
 
 Interactive OpenAPI documentation is available at
 `http://127.0.0.1:8000/docs` while the server is running.

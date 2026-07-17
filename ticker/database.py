@@ -9,11 +9,14 @@ from typing import Iterator
 
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS exchange_rates (
+CREATE TABLE IF NOT EXISTS eur_exchange_rates (
     effective_date TEXT PRIMARY KEY,
-    eur_unit INTEGER NOT NULL CHECK (eur_unit > 0),
-    middle_rate TEXT NOT NULL,
-    fetched_at_utc TEXT NOT NULL
+    middle_rate TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS usd_exchange_rates (
+    effective_date TEXT PRIMARY KEY,
+    middle_rate TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS societies (
@@ -50,6 +53,7 @@ def connect(path: Path) -> Iterator[sqlite3.Connection]:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA busy_timeout = 30000")
         connection.executescript(SCHEMA)
+        _migrate_exchange_rates(connection)
         _migrate_fund_values(connection)
         yield connection
         connection.commit()
@@ -58,6 +62,20 @@ def connect(path: Path) -> Iterator[sqlite3.Connection]:
         raise
     finally:
         connection.close()
+
+
+def _migrate_exchange_rates(connection: sqlite3.Connection) -> None:
+    """Migrate the old exchange-rate table while preserving its values."""
+    old_table = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'exchange_rates'"
+    ).fetchone()
+    if old_table is None:
+        return
+    connection.execute(
+        """INSERT OR IGNORE INTO eur_exchange_rates (effective_date, middle_rate)
+           SELECT effective_date, middle_rate FROM exchange_rates"""
+    )
+    connection.execute("DROP TABLE exchange_rates")
 
 
 def _migrate_fund_values(connection: sqlite3.Connection) -> None:
@@ -129,24 +147,19 @@ def _migrate_fund_values(connection: sqlite3.Connection) -> None:
 
 def exchange_rate_exists(connection: sqlite3.Connection, effective_date: date) -> bool:
     row = connection.execute(
-        "SELECT 1 FROM exchange_rates WHERE effective_date = ?", (effective_date.isoformat(),)
+        "SELECT 1 FROM eur_exchange_rates WHERE effective_date = ?",
+        (effective_date.isoformat(),),
     ).fetchone()
     return row is not None
 
 
 def insert_exchange_rate(
-    connection: sqlite3.Connection, effective_date: date, rate: Decimal, eur_unit: int = 1
+    connection: sqlite3.Connection, effective_date: date, rate: Decimal
 ) -> bool:
     cursor = connection.execute(
-        """INSERT OR IGNORE INTO exchange_rates
-           (effective_date, eur_unit, middle_rate, fetched_at_utc)
-           VALUES (?, ?, ?, ?)""",
-        (
-            effective_date.isoformat(),
-            eur_unit,
-            str(rate),
-            datetime.now(timezone.utc).isoformat(),
-        ),
+        """INSERT OR IGNORE INTO eur_exchange_rates
+           (effective_date, middle_rate) VALUES (?, ?)""",
+        (effective_date.isoformat(), str(rate)),
     )
     return cursor.rowcount == 1
 

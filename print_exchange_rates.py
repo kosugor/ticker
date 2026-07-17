@@ -9,8 +9,8 @@ from ticker.database import connect
 
 def exchange_rates(connection: sqlite3.Connection):
     return connection.execute(
-        """SELECT effective_date, eur_unit, middle_rate
-           FROM exchange_rates
+        """SELECT effective_date, middle_rate
+           FROM eur_exchange_rates
            ORDER BY effective_date ASC"""
     ).fetchall()
 
@@ -23,8 +23,8 @@ def print_exchange_rates(database_path: Path) -> None:
         print("Exchange rates: no data")
         return
 
-    for effective_date, eur_unit, middle_rate in rows:
-        print(f"Exchange rate ({effective_date}): {eur_unit} EUR = {middle_rate} RSD")
+    for effective_date, middle_rate in rows:
+        print(f"Exchange rate ({effective_date}): 1 EUR = {middle_rate} RSD")
 
 
 def main() -> int:

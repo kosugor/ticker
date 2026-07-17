@@ -16,7 +16,6 @@ class NbsParseError(ValueError):
 class OfficialExchangeRate:
     effective_date: date
     rate: Decimal
-    eur_unit: int = 1
 
 
 _DATE_PATTERN = re.compile(r"(?P<day>\d{1,2})\.(?P<month>\d{1,2})\.(?P<year>\d{4})\.")

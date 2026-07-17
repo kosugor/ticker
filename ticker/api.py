@@ -13,7 +13,7 @@ from ticker.config import Settings
 from ticker.database import connect
 
 
-EXCHANGE_RATE_COLUMNS = "effective_date, eur_unit, middle_rate, fetched_at_utc"
+EXCHANGE_RATE_COLUMNS = "effective_date, middle_rate"
 FUND_VALUE_COLUMNS = (
     "society.society_id AS society_id, fund.fund_id, value.value_date, "
     "value.investment_unit_value, value.investment_unit_currency, "
@@ -67,7 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return _as_dicts(
                 connection.execute(
                     f"""SELECT {EXCHANGE_RATE_COLUMNS}
-                        FROM exchange_rates
+                        FROM eur_exchange_rates
                         {where_clause}
                         ORDER BY effective_date DESC""",
                     parameters,
@@ -104,13 +104,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
             )
 
+    @app.get("/fund-values/{fund_id}")
+    def fund_values_by_id(
+        fund_id: str,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[dict[str, Any]]:
+        conditions = ["fund.fund_id = ?"]
+        parameters: list[str] = [fund_id]
+        if start_date is not None:
+            conditions.append("value.value_date >= ?")
+            parameters.append(start_date.isoformat())
+        if end_date is not None:
+            conditions.append("value.value_date <= ?")
+            parameters.append(end_date.isoformat())
+
+        with connect(configured_settings.database_path) as connection:
+            return _as_dicts(
+                connection.execute(
+                    f"""SELECT {FUND_VALUE_COLUMNS}
+                        FROM {FUND_VALUE_FROM}
+                        WHERE {' AND '.join(conditions)}
+                        ORDER BY value.value_date DESC""",
+                    parameters,
+                )
+            )
+
     @app.get("/latest-values")
     def latest_values() -> dict[str, Any]:
         with connect(configured_settings.database_path) as connection:
             exchange_rate = _as_dict(
                 connection.execute(
                     f"""SELECT {EXCHANGE_RATE_COLUMNS}
-                        FROM exchange_rates
+                        FROM eur_exchange_rates
                         ORDER BY effective_date DESC
                         LIMIT 1"""
                 )
