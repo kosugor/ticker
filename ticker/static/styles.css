@@ -99,5 +99,26 @@ footer a { color: var(--green); font-weight: 700; }
 .society-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.35rem 1.6rem 1.1rem; }
 .society-heading .card-label { color: var(--green); }
 .panel-empty { width: 100%; margin: 0; padding: 3rem; border: 1px solid var(--line); border-radius: 1.1rem; background: var(--surface); box-shadow: var(--shadow); }
+.chart-hero { padding-bottom: 3rem; }
+.chart-panel { padding: 1rem; }
+.chart-controls { display: grid; gap: .55rem; margin: .2rem .4rem 1.5rem; padding: .9rem 1rem; border: 1px solid var(--line); border-radius: .8rem; background: #fafbf9; }
+.range-heading { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); font-size: .78rem; }
+.range-heading strong { color: var(--ink); font-weight: 700; }
+.range-slider { position: relative; height: 2rem; margin: 0 .35rem; }
+.range-track { position: absolute; top: .85rem; right: 0; left: 0; height: .35rem; border-radius: 999px; background: var(--line); }
+.range-input { position: absolute; top: .2rem; left: 0; width: 100%; height: 1.35rem; margin: 0; padding: 0; appearance: none; pointer-events: none; accent-color: var(--green); border: 0; background: transparent; cursor: pointer; }
+.range-input::-webkit-slider-runnable-track { height: .35rem; background: transparent; }
+.range-input::-moz-range-track { height: .35rem; background: transparent; }
+.range-input::-webkit-slider-thumb { width: 1.15rem; height: 1.15rem; margin-top: -.4rem; appearance: none; pointer-events: auto; border: 3px solid white; border-radius: 50%; background: var(--green); box-shadow: 0 1px 5px rgba(22, 50, 39, .3); cursor: grab; }
+.range-input::-moz-range-thumb { width: .8rem; height: .8rem; pointer-events: auto; border: 3px solid white; border-radius: 50%; background: var(--green); box-shadow: 0 1px 5px rgba(22, 50, 39, .3); cursor: grab; }
+.range-start { z-index: 2; }
+.range-end { z-index: 1; }
+.chart-wrap { width: 100%; overflow-x: auto; }
+#rate-chart { display: block; width: 100%; min-width: 650px; height: auto; min-height: 300px; }
+.chart-grid { stroke: var(--line); stroke-width: 1; }
+.chart-line { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.chart-axis { fill: var(--muted); font-size: 13px; }
+.chart-stat { color: var(--green); font-family: Georgia, "Times New Roman", serif; font-size: 1.5rem; font-weight: 600; }
+.chart-meta { color: var(--muted); font-size: .84rem; }
 @media (max-width: 760px) { .society-grid { grid-template-columns: 1fr; } }
 .society-date { margin: .2rem 0 0; color: var(--muted); font-size: .84rem; }

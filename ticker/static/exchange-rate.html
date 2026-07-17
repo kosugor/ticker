@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Historical Serbian dinar exchange rate chart.">
+    <title>Ticker · Exchange rate chart</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3">
+    <script src="/static/chart.js?v=1" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Ticker dashboard home">
+        <span class="brand-mark" aria-hidden="true">T</span><span>Ticker</span>
+      </a>
+      <nav aria-label="Exchange rate pages">
+        <a href="/">Dashboard</a><a href="/charts/eur">EUR</a><a href="/charts/usd">USD</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero chart-hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">NBS middle rate · RSD</p>
+          <h1 id="page-title">Exchange rates</h1>
+          <p class="hero-copy" id="chart-description">Historical exchange rate data.</p>
+        </div>
+        <div class="connection" id="connection-status" role="status" aria-live="polite">
+          <span class="status-dot"></span><span>Loading chart…</span>
+        </div>
+      </section>
+      <section class="section" aria-labelledby="chart-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">History</p><h2 id="chart-title">Rate over time</h2></div>
+          <div class="chart-stat" id="latest-rate">—</div>
+        </div>
+        <div class="panel chart-panel">
+          <div class="chart-controls" aria-label="Chart date range">
+            <div class="range-heading"><span>Selected period</span><strong><span id="start-date">—</span> – <span id="end-date">—</span></strong></div>
+            <div class="range-slider">
+              <div class="range-track" aria-hidden="true"></div>
+              <input id="start-slider" class="range-input range-start" type="range" min="0" max="0" value="0" step="1" aria-label="Start date">
+              <input id="end-slider" class="range-input range-end" type="range" min="0" max="0" value="0" step="1" aria-label="End date">
+            </div>
+          </div>
+          <div class="chart-wrap"><svg id="rate-chart" role="img" aria-label="Exchange rate line chart"></svg></div>
+          <p class="empty" id="chart-empty" hidden>No exchange-rate data has been collected yet.</p>
+        </div>
+        <p class="chart-meta" id="chart-meta"></p>
+      </section>
+    </main>
+    <footer><a href="/">Back to dashboard</a> · Data is shown as collected.</footer>
+  </body>
+</html>

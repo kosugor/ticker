@@ -23,6 +23,10 @@ FUND_VALUE_FROM = """fund_values AS value
 JOIN funds AS fund ON fund.id = value.fund_id
 JOIN societies AS society ON society.id = fund.society_id"""
 STATIC_DIR = Path(__file__).with_name("static")
+EXCHANGE_RATE_TABLES = {
+    "eur": "eur_exchange_rates",
+    "usd": "usd_exchange_rates",
+}
 
 
 def _as_dicts(cursor: sqlite3.Cursor) -> list[dict[str, Any]]:
@@ -44,6 +48,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def homepage() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html")
 
+    @app.get("/charts/{currency}", include_in_schema=False)
+    def exchange_rate_chart(currency: str) -> FileResponse:
+        if currency.lower() not in EXCHANGE_RATE_TABLES:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=404, detail="Unknown currency")
+        return FileResponse(STATIC_DIR / "exchange-rate.html")
+
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
@@ -63,11 +75,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             parameters.append(end_date.isoformat())
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        return _exchange_rates("eur", where_clause, parameters)
+
+    @app.get("/exchange-rates/{currency}")
+    def exchange_rates_by_currency(
+        currency: str,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        parameters: list[str] = []
+        if start_date is not None:
+            conditions.append("effective_date >= ?")
+            parameters.append(start_date.isoformat())
+        if end_date is not None:
+            conditions.append("effective_date <= ?")
+            parameters.append(end_date.isoformat())
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        return _exchange_rates(currency, where_clause, parameters)
+
+    def _exchange_rates(
+        currency: str, where_clause: str, parameters: list[str]
+    ) -> list[dict[str, Any]]:
+        table = EXCHANGE_RATE_TABLES.get(currency.lower())
+        if table is None:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=404, detail="Unknown currency")
         with connect(configured_settings.database_path) as connection:
             return _as_dicts(
                 connection.execute(
                     f"""SELECT {EXCHANGE_RATE_COLUMNS}
-                        FROM eur_exchange_rates
+                        FROM {table}
                         {where_clause}
                         ORDER BY effective_date DESC""",
                     parameters,
