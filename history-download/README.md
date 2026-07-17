@@ -74,8 +74,8 @@ writing fails.
 
 ## Import the CSV into SQLite
 
-Import all normalized provider histories (NLB, UniCredit, WVP, Vista Rica, and
-Eclectica Capital) into the application's `fund_values`
+Import all normalized provider histories (including OTP Invest) into the
+application's `fund_values`
 table with:
 
 ```sh
@@ -138,3 +138,25 @@ python3 import_raiffeiseninvest_csv_to_sqlite.py \
 Run `python3 import_raiffeiseninvest_csv_to_sqlite.py --help` for all CLI
 options. The command exits with a nonzero status if CSV validation, date
 conversion, or database writing fails.
+
+## Download and import OTP Invest history
+
+Download OTP Invest's complete published daily unit-value and net-assets history:
+
+```sh
+python3 download_otpinvest_history.py
+```
+
+The downloader writes `otpinvest_history.csv` by default. It retrieves native
+RSD series for RSD funds and the native EUR series for OTP Euro Cash. To choose
+an output path or timeout:
+
+```sh
+python3 download_otpinvest_history.py --output otp-history.csv --timeout 45
+```
+
+Import the resulting normalized CSV into the application's `fund_values` table:
+
+```sh
+python3 import_otpinvest_csv_to_sqlite.py
+```

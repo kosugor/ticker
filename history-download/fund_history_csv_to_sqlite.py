@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ticker.database import connect
+from ticker.seed import ensure_seeded_database
 
 
 CSV_COLUMNS = (
@@ -33,6 +34,7 @@ def normalize_date(date_text: str, row_number: int) -> str:
 
 def import_csv(input_path: Path, database_path: Path) -> int:
     """Import normalized history rows into fund_values using integer fund IDs."""
+    ensure_seeded_database(database_path)
     with input_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
         reader = csv.DictReader(csv_file)
         if reader.fieldnames != list(CSV_COLUMNS):

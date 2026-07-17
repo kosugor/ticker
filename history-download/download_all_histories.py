@@ -17,6 +17,7 @@ DOWNLOADS = (
         "raiffeiseninvest_history.csv",
     ),
     ("NLB Fondovi", "download_nlbfondovi_history.py", "nlbfondovi_history.csv"),
+    ("OTP Invest", "download_otpinvest_history.py", "otpinvest_history.csv"),
     ("UniCredit Invest", "download_unicreditinvest_history.py", "unicreditinvest_history.csv"),
     ("WVP Fondovi", "download_wvpfondovi_history.py", "wvpfondovi_history.csv"),
     ("Vista Rica", "download_vistarica_history.py", "vistarica_history.csv"),

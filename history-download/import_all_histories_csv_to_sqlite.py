@@ -16,6 +16,7 @@ IMPORTS = (
     ("Eclectica Capital", "import_eclecticacapital_csv_to_sqlite.py", "eclecticacapital_history.csv"),
     ("Intesa Invest", "import_intesainvest_csv_to_sqlite.py", "intesainvest_history.csv"),
     ("NLB Fondovi", "import_nlbfondovi_csv_to_sqlite.py", "nlbfondovi_history.csv"),
+    ("OTP Invest", "import_otpinvest_csv_to_sqlite.py", "otpinvest_history.csv"),
     ("Raiffeisen Invest", "import_raiffeiseninvest_csv_to_sqlite.py", "raiffeiseninvest_history.csv"),
     ("UniCredit Invest", "import_unicreditinvest_csv_to_sqlite.py", "unicreditinvest_history.csv"),
     ("Vista Rica", "import_vistarica_csv_to_sqlite.py", "vistarica_history.csv"),
