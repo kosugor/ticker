@@ -47,6 +47,9 @@ def populated_client(tmp_path) -> TestClient:
         insert_fund_value(
             connection, "fund-example", fund_value("fund-a", date(2026, 7, 14), "10.00")
         )
+        insert_fund_value(
+            connection, "fund-example", fund_value("old-fund", date(2026, 7, 14), "9.50")
+        )
 
     return TestClient(create_app(settings(database_path)))
 
@@ -102,6 +105,7 @@ def test_lists_fund_values_by_date_then_fund_id(tmp_path) -> None:
     assert [(row["value_date"], row["fund_id"]) for row in rows] == [
         ("2026-07-14", "fund-a"),
         ("2026-07-14", "fund-b"),
+        ("2026-07-14", "old-fund"),
         ("2026-07-13", "old-fund"),
     ]
     assert rows[0]["investment_unit_value"] == "10.00"
@@ -138,6 +142,7 @@ def test_latest_values_uses_each_most_recent_date(tmp_path) -> None:
     assert [row["fund_id"] for row in payload["fund_values"]] == [
         "fund-a",
         "fund-b",
+        "old-fund",
     ]
     assert {row["value_date"] for row in payload["fund_values"]} == {"2026-07-14"}
 

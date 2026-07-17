@@ -92,3 +92,12 @@ footer a { color: var(--green); font-weight: 700; }
 }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.latest-summary { display: flex; gap: .55rem; margin: -.5rem 0 1.25rem; color: var(--muted); font-size: .9rem; }
+.society-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem; }
+.society-card { min-width: 0; }
+.society-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.35rem 1.6rem 1.1rem; }
+.society-heading .card-label { color: var(--green); }
+.panel-empty { width: 100%; margin: 0; padding: 3rem; border: 1px solid var(--line); border-radius: 1.1rem; background: var(--surface); box-shadow: var(--shadow); }
+@media (max-width: 760px) { .society-grid { grid-template-columns: 1fr; } }
+.society-date { margin: .2rem 0 0; color: var(--muted); font-size: .84rem; }
